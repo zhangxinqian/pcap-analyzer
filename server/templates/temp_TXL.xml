@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<preprocessConfig version="2.00" build="TXL2015080401" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+{%- block temp -%}
+{%- set Sid_number = 10100 -%} {# define the site_number #}
+    <site id="{{ Sid_number }}" name="{{ data1['name'] }}" domain="{{ data2['host']}}" type="{{ data1['type']}}">
+        {%- set Fid_number = Sid_number+ 1 -%} {# define the filter_number #}
+        {% for filter_item in data2 %}  {# to handle for each url as an element of arry data2#}
+        {# {% set filter_item=data2 %} #}
+            <filter id="{{ Fid_number }}" method="{{ filter_item['method'] }}" url="{{ filter_item['url'] }}" host="{{ filter_item['host'] }}" time="{{ filter_item['time']}}" >
+                <infoExtraction>
+                {%- set info_flag = 1 -%} {# Sourcefrom and CoordType print only once for all the four locations #}
+                {% for locat_key, locat_val in filter_item['locations'].items() %} {# to handle for each Location (requestHead/requestBody/responseHead/responseBody) #}
+                    <extrationSection location="{{ locat_key }}">
+                        {%- if info_flag %}
+                        <infoDef infoName="SourceFrom" infoValue="{{ filter_item['info'][0]['value'] }}" decode="URL_UTF8"/>
+                        {%- set info_flag = 0 -%}
+                        {%- endif %}
+                        <regex pattern="{{ locat_val['contact_split'] }}" extractNum="unlimited">
+                            <foreach name="identity">
+                                <varDef name="RealName" defaultValue=""/>
+                                <varDef name="nickname" defaultValue=""/>
+                                <varDef name="Note" defaultValue=""/>
+                                <varDef name="Relation" defaultValue=""/>
+                                <varDef name="ORG" defaultValue=""/>
+                                <varDef name="Mobile" defaultValue=""/>
+                                <varDef name="Email" defaultValue=""/>
+                                <varDef name="Address" defaultValue=""/>
+                                {% if locat_val['info_split'] %}
+                                <regex pattern="{{ locat_val['info_split'] }}" extractMode="split">
+                                    <foreach name="Info">
+                                {% endif -%}
+                                    {#对infoname为空的元组进行递归使用for循环（加上recursive修饰、loop）,else否则进行赋值#}
+                                    {%- for pat_item in locat_val['for_each'] recursive %}  {# 对每一个infoname为空的处理 #}  {# regex要嵌套 #}
+                                        {%- if pat_item['infoname'] == None %}
+                                            <regex pattern="{{ pat_item['pattern'] }}"> {# 这个regex与endfor pat_item前的</regex>配对 #}
+                                            {{ loop( pat_item['regex']) }}
+                                            </regex>{# 与每一个infoname为空的regex相对应 #}
+                                        {%- else %} {# 对infoname不为空的进行赋值 #}
+                                            <regex pattern="{{ pat_item['pattern'] }}" infoName="{{ pat_item['infoname'] }}"/>
+                                        {%- endif %}
+                                    {% endfor -%}
+                                    {# to handle each item with concatenation #}
+                                    {% for joint_item in locat_val['for_joint'] %}
+                                        <varDef name="new{{ joint_item['infoname'] }}" defaultValue=""/>
+                                        <regex pattern="{{ joint_item['pattern'] }}">
+                                            {% if joint_item['replace']['pattern'] %}
+                                            <regex pattern="{{ joint_item['replace']['pattern'] }}" regexMode="replace" replaceValue="{{ joint_item['replace']['replaceValue'] }}">
+                                            {% endif %}
+                                            <varDef name="new{{ joint_item['infoname'] }}"/>
+                                            <case>
+                                                <if condition="$({{ joint_item['infoname'] }})==' '">
+                                                    <varDef name="{{ joint_item['infoname'] }}" defaultValue="$(new{{ joint_item['infoname'] }})"/>
+                                                </if>
+                                                <else>
+                                                    <varDef name="{{ joint_item['infoname'] }}" defaultValue="$({{ joint_item['infoname'] }}),$(new{{ joint_item['infoname'] }})"/>
+                                                </else>
+                                            </case>
+                                            {% if joint_item['replace']['pattern'] %}
+                                            </regex>
+                                            {% endif %}
+                                        </regex>
+                                    {% endfor %}
+                                {% if locat_val['info_split'] %}
+                                    </foreach>
+                                </regex>
+                                {% endif %}
+                                <infoDef infoName="identityRealName" infoValue="$(RealName)"/>
+                                <infoDef infoName="ContactRealName" infoValue="$(RealName)"/>
+                                <infoDef infoName="identityNickName" infoValue="$(nickname)"/>
+                                <infoDef infoName="ContactNickName" infoValue="$(nickname)"/>
+                                <infoDef infoName="identityNote" infoValue="$(Note)"/>
+                                <infoDef infoName="ContactNote" infoValue="$(Note)"/>
+                                <infoDef infoName="identityRelation" infoValue="$(Relation)"/>
+                                <infoDef infoName="ContactRelation" infoValue="$(Relation)"/>
+                                <infoDef infoName="identityOrg" infoValue="$(ORG)"/>
+                                <infoDef infoName="ContactOrg" infoValue="$(ORG)"/>
+                                <infoDef infoName="identityMobile" infoValue="$(Mobile)"/>
+                                <infoDef infoName="ContactMobile" infoValue="$(Mobile)"/>
+                                <infoDef infoName="identityEmail" infoValue="$(Email)"/>
+                                <infoDef infoName="ContactEmail" infoValue="$(Email)"/>
+                                <infoDef infoName="identityAddr" infoValue="$(Address)"/>
+                                <infoDef infoName="ContactAddr" infoValue="$(Address)"/>
+                            </foreach>
+                        </regex>
+
+                    </extrationSection>
+                {% else %}
+                    {{ "Something Error! " }}
+                    {% print 'Errors occur in the content of location'+ '\n' %}
+                {% endfor %}
+                </infoExtraction>
+
+                <output>
+                    <file outputType="TXL_INFO" msgType="TXL_INFO"/>
+                </output>
+            </filter>
+            {%- set Fid_number = Fid_number+ 1 -%}
+            {% endfor %}
+        {#{% else %}
+            {% print 'Errors occur in the content of URL iteration'+ '\n' %}
+        {% endfor %} #}
+    </site>
+{% endblock temp -%}
+</preprocessConfig>

@@ -1,0 +1,36 @@
+body {
+    background-color: #E9E9E9;
+}
+
+#wrapper {
+    margin-top: 3.5rem;
+    margin-left: 10rem;
+    margin-right: 10rem;
+}
+
+#browser li :hover {
+    cursor: pointer;
+}
+
+#pathtonode {
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    background-color: #F2F1E8;
+    padding: 5px;
+}
+
+
+#accumpaths {
+    list-style-type: none;
+    display: block;
+    width: 600px;
+}
+
+#accumpaths li {
+    float: left;
+}
+
+#accumpaths a {
+    padding-left: 5px;
+}

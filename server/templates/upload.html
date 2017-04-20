@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+	  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='components/form.css') }}">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='components/transition.css') }}">
+	<script src="../static/components/form.js"></script>
+</head>
+<h3 class="ui dividing header">Pcap File Manage</h3>
+  <div class="ui two column fitted stackable grid">
+	<!--column1-->
+	<div class="ui eleven wide column">
+  	<div class="ui segment">
+		<table class="ui black celled table">
+		  <thead>
+		    <tr><tr>
+		      <th>File</th>
+		      <th>Packets</th>
+		      <th>Size</th>
+		      <th class="center aligned">Option</th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		  {% for CapFile in CapFiles %}
+		    <tr>
+		      <td width="40%">{{ CapFile.filename }}</td>
+		      <td>{{ CapFile.filepcap }}</td>
+		      <td width="20%">{{ CapFile.filesize }}</td>
+		      <td class="right aligned collapsing">
+		        <div class="ui fitted toggle checkbox">
+		          <input type="checkbox" name="checkoption" value="{{ CapFile.id }}"><label></label>
+		        </div>
+		      </td>
+		    </tr>
+		  {% endfor %}
+		  </tbody>
+		  <tfoot class="full-width">
+		    <tr>
+		      <th colspan="4">
+		        <div class="ui small button" id="delete-button">
+		          Delete
+		        </div>
+		        <div class="ui small button" id="download-button">
+		          Download
+		        </div>
+		      </th>
+		    </tr>
+		  </tfoot>
+		</table>
+		<div class="ui segment two column fitted stackable grid">
+			<div class="ui eight wide column">
+				<h5 class="ui dividing header">Select City</h5>
+				<div>
+					<select  class="ui search dropdown" id="searchCity" >
+						<option value="">Shanghai</option>
+						<option value="SH">Shanghai</option>
+						<option value="NJ">Nanjing</option>
+					</select></div>
+				<div class="ui secondary segment">
+						<p id="cityMessage"></p>
+				</div>
+			</div>
+			<div class="ui ui eight wide column">
+				<h5 class="ui dividing header">Select Type</h5>
+				<div>
+					<select  class="ui search dropdown" id="searchType" >
+						<option value="">LBS</option>
+						<option value="SH">LBS</option>
+						<option value="NJ">TXL</option>
+					</select></div>
+				<div class="ui secondary segment">
+						<p id="typeMessage"></p>
+				</div>
+			</div>
+		</div>
+		<div class="ui segment two column fitted stackable grid">
+			<div class="ui eight wide column">
+				<h5 class="ui dividing header">Select Contact</h5>
+				<div>
+					<select  class="ui dropdown" id="searchContact" >
+						{% set id=0 %}
+						{% for contact in Contacts %}
+							<option value="{{id}}">{{contact.user_name}}</option>
+							{% set id=id+1 %}
+						{% endfor %}
+					</select>
+				</div>
+				<div class="ui secondary segment">
+					<p id="contactMessage"></p>
+				</div>
+				<tfoot class="full-width">
+					<tr>
+						<th colspan="4">
+							<div class="ui small button" id="addUser-button">
+							  	Add
+							</div>
+							<div class="ui small button" id="deleteUser-button">
+							  	Delete
+							</div>
+						</th>
+					</tr>
+			  	</tfoot>
+			</div>
+			<div class="ui eight wide column">
+				<h5 class="ui dividing header">Select Device</h5>
+				<div>
+					<select  class="ui search dropdown" id="searchDevice" >
+						{% set id=0 %}
+						{% for device in Devices %}
+							<option value="{{id}}">{{device.device_imei}}</option>
+							{% set id=id+1 %}
+						{% endfor %}
+					</select>
+				</div>
+				<div class="ui secondary segment">
+					<p id="deviceMessage"></p>
+				</div>
+				<tfoot class="full-width">
+					<tr>
+						<th colspan="4">
+							<div class="ui small button" id="addDevice-button">
+							  	Add
+							</div>
+							<div class="ui small button" id="deleteDevice-button">
+							  	Delete
+							</div>
+						</th>
+					</tr>
+			  	</tfoot>
+			</div>
+			<script>
+				//Contact
+				var array=[];
+				{% for contact in Contacts %}
+					array.push("Name: {{contact.user_name}};  CompanyName: {{contact.user_companyName}};  Titile: {{contact.user_Title}};  Mobile: {{contact.user_mobile}};  Email: {{contact.user_email}};  GroupName: {{contact.user_groupName}};  Address: {{contact.user_address}};  NickName: {{contact.user_nickname}};  Birthday: {{contact.user_birthday}};  Nodes: {{contact.user_notes}}");
+				{% endfor %}
+				function contactToStr(text) {
+					$("#contactMessage").html(text);
+				}
+				var ci=$("#searchContact").find("option:selected").val();
+				contactToStr(array[ci]);
+				$("#searchContact").change(function(){
+					ci=$("#searchContact").find("option:selected").val();
+					contactToStr(array[ci]);
+				});
+
+				//Device
+				var devices=[];
+				{% for device in Devices %}
+					devices.push("ID: {{device.device_id}};  Name: {{device.device_name}};  IMEI: {{device.device_imei}};  OS: {{device.device_os}};  SerialNumber: {{device.device_SerialNumber}}");
+				{% endfor %}
+				function deviceToStr(text) {
+					$("#deviceMessage").html(text);
+				}
+				var di=$("#searchDevice").find("option:selected").val();
+				deviceToStr(devices[di]);
+				$("#searchDevice").change(function(){
+					di=$("#searchDevice").find("option:selected").val();
+					deviceToStr(devices[di]);
+				});
+			</script>
+		</div>
+		<div class="ui black small right floated button" id="analyze-button">
+			<i class="send icon" ></i>&nbsp&nbspFirst &nbsp&nbsp&nbspAnalyze
+		</div>
+		<br><br><br>
+		<div class="ui black small right floated button" id="send_gen_2">
+            <i class="send icon"></i>Second Analyze
+        </div>
+
+	<div class="ui  small del modal " id='del-confirm'>
+	    <div class="header">
+	      Delete File?
+	    </div>
+	    <div class="content">
+	      <p>Are you sure you want to delete these file?</p>
+	    </div>
+	    <div class="actions">
+	      <div class="ui negative button">
+	        No
+	      </div>
+	      <div class="ui positive right labeled icon button">
+	        Yes
+	        <i class="checkmark icon"></i>
+	      </div>
+	    </div>
+	</div>
+
+	<div class="ui small ok modal" id='upload-ok'>
+	    <div class="header">
+	      Upload File
+	    </div>
+	    <div class="content">
+	      <p>File Upload OK!</p>
+	    </div>
+	    <div class="actions">
+	      <div class="ui positive right labeled icon button">
+	        Yes
+	        <i class="checkmark icon"></i>
+	      </div>
+	    </div>
+	</div>
+	<div class="ui small ok modal " id='addDevice-ok'>
+		<div class="ui segment" id="hidden_div">
+			<h5 class="ui dividing header">Add Your Device</h5>
+			<form class="ui form segment">
+				<div class="fields">
+					<div ></div>
+					<div class="field" id="field_id">
+						<label>device_id</label>
+						<input type="text" size="42" name="device_id">
+						<div class="ui error message" id="error_id" style="display:none"><ul class="list"><li>Please enter a valid e-mail</li></ul></div>
+					</div>
+					<div class="field"  id="field_name">
+						<label>device_name</label>
+						<input type="text" size="42" name="device_name">
+						<div class="ui error message" id="error_name" style="display:none"><ul class="list"><li>Please enter a valid e-mail</li></ul></div>
+					</div>
+					<div class="field" id="field_imei">
+						<label>device_imei</label>
+						<input type="text" size="42" name="device_imei">
+						<div class="ui error message" id="error_imei" style="display:none"><ul class="list"><li>Please enter a valid e-mail</li></ul></div>
+					</div>
+					<div class="field" id="field_os">
+						<label>device_os</label>
+						<input type="text" size="42" name="device_os">
+						<div class="ui error message" id="error_os" style="display:none"><ul class="list"><li>Please enter a valid e-mail</li></ul></div>
+					</div>
+					<div class="field" id="field_serialNumber">
+						<label>device_SerialNumber</label>
+						<input type="text" size="42" name="device_serialNumber">
+						<div class="ui error message" id="error_serialNumber" style="display:none"><ul class="list"><li>Please enter a valid e-mail</li></ul></div>
+					</div>
+				</div>
+			</form>
+		</div>
+	    <div class="actions">
+	      <div class="ui negative button">
+	        No
+	      </div>
+	      <div class="ui positive right labeled icon button">
+	        Yes
+	        <i class="checkmark icon"></i>
+	      </div>
+	    </div>
+	</div>
+	<div class="ui small ok modal " id='addUser-ok'>
+		<div class="ui segment" id="hidden2_div">
+			<h5 class="ui dividing header">Add Your Contact Information</h5>
+			<form class="ui form segment">
+				<div class="fields">
+					<div ></div>
+					<div class="field" id="field_user_name">
+						<label>user_name</label>
+						<input type="text" size="42" name="user_name">
+						<div class="ui error message" id="error_user_name" style="display:none"><ul class="list"><li>Please enter a valid user name</li></ul></div>
+					</div>
+					<div class="field"  id="field_user_companyName">
+						<label>user_companyName</label>
+						<input type="text" size="42" name="user_companyName">
+						<div class="ui error message" id="error_user_companyName" style="display:none"><ul class="list"><li>Please enter a valid user company name</li></ul></div>
+					</div>
+					<div class="field" id="field_user_title">
+						<label>user_title</label>
+						<input type="text" size="42" name="user_title">
+						<div class="ui error message" id="error_user_title" style="display:none"><ul class="list"><li>Please enter a valid user title</li></ul></div>
+					</div>
+					<div class="field" id="field_user_mobile">
+						<label>user_mobile</label>
+						<input type="text" size="42" name="user_mobile">
+						<div class="ui error message" id="error_user_mobile" style="display:none"><ul class="list"><li>Please enter a valid user mobile</li></ul></div>
+					</div>
+					<div class="field" id="field_user_email">
+						<label>user_email</label>
+						<input type="text" size="42" name="user_email">
+						<div class="ui error message" id="error_user_email" style="display:none"><ul class="list"><li>Please enter a valid user email</li></ul></div>
+					</div>
+					<div class="field" id="field_user_groupName">
+						<label>user_groupName</label>
+						<input type="text" size="42" name="user_groupName">
+						<div class="ui error message" id="error_user_groupName" style="display:none"><ul class="list"><li>Please enter a valid user group name</li></ul></div>
+					</div>
+					<div class="field" id="field_user_address">
+						<label>user_address</label>
+						<input type="text" size="42" name="user_address">
+						<div class="ui error message" id="error_user_address" style="display:none"><ul class="list"><li>Please enter a valid user address</li></ul></div>
+					</div>
+					<div class="field" id="field_user_nickname">
+						<label>user_nickname</label>
+						<input type="text" size="42" name="user_nickname">
+						<div class="ui error message" id="error_user_nickname" style="display:none"><ul class="list"><li>Please enter a valid user nickname</li></ul></div>
+					</div>
+					<div class="field" id="field_user_birthday">
+						<label>user_birthday</label>
+						<input type="text" size="42" name="user_birthday">
+						<div class="ui error message" id="error_user_birthday" style="display:none"><ul class="list"><li>Please enter a valid user birthday</li></ul></div>
+					</div>
+					<div class="field" id="field_user_notes">
+						<label>user_notes</label>
+						<input type="text" size="42" name="user_notes">
+						<div class="ui error message" id="error_user_notes" style="display:none"><ul class="list"><li>Please enter a valid notes</li></ul></div>
+					</div>
+				</div>
+			</form>
+		</div>
+	    <div class="actions">
+	      <div class="ui negative button">
+	        No
+	      </div>
+	      <div class="ui positive right labeled icon button">
+	        Yes
+	        <i class="checkmark icon"></i>
+	      </div>
+	    </div>
+	</div>
+	</div>
+	</div>
+
+	<!--column2-->
+	<div class="ui five wide column">
+	<div class="ui segment">
+	  	<div class="field">
+		<h5 class="ui dividing header">Upload Pcap File</h5>
+		<span class="fluid ui black button fileinput-button"><i class="cloud upload icon"></i>Upload
+		<input id='fileupload' type="file" name="pcapfile" data-url="/upload">
+		</span>
+		<br/>
+		<div id="upprogress" class="ui green file progress">
+		  <div class="progress">
+		    <div class="bar"></div>
+		  </div>
+		  <div class="label" id='progresslabel'></div>
+		</div>
+	  </div>
+	</div>
+
+	</div>
+
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

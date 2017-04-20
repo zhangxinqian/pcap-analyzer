@@ -1,0 +1,9 @@
+POST /sdk.php HTTP/1.1
+Content-Type: application/x-www-form-urlencoded; charset=utf-8
+Accept-Charset: UTF-8;
+Content-Length: 169
+Host: loc.map.baidu.com
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/UNAVAILABLE (java 1.4)
+
+qt=conf&req=6rihufb76Lyw4frmor_3u53oucrry-3k5pOU65Ht7OOo2NLc3N-tr9b31ISE8tHUg8uanMmayczBx8XEw8nDyfDN6-Tn--_to-u16eGOs6mrva246_T68v655eb2-7Ph3sHAlvjv5ZuNwwTiW3u1%7Ctp%3D3

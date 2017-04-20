@@ -1,0 +1,29 @@
+{
+  "LBS": [
+    "IMEI",
+    "IMSI",
+    "DESC",
+    "LAT",
+    "LNG",
+    "RADUIS"
+  ],
+  "INFO_LBS": [
+    "sourcefrom",
+    "coordtype"
+  ],
+  "INFO_TXL": [
+    "sourcefrom"
+  ],
+  "TXL": [
+    "contact_split",
+    "info_split",
+    "NAME",
+    "NICKNAME",
+    "NOTE",
+    "RELATION",
+    "ORG",
+    "MOBILE",
+    "EMAIL",
+    "ADDR"
+  ]
+}

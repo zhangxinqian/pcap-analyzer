@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>配置2分析</title>
+</head>
+<body>
+<meta charset="UTF-8">
+<div class="ui two column fitted stackable grid">
+    <div class="ui eleven wide column">
+        <div class="ui segment">
+            <a class="ui orange ribbon label" style="bottom:10px;">Packets Details&nbsp&nbsp<i class="large green checkmark icon" id="check"></i></a>
+
+            <div class="ui segments" id="segment_one">
+                <div class="ui segment">
+                    <p>request header</p>
+
+                    <p id="requestHead">
+                        {% for req in frame[0]['req_h'].split('<br>')%}
+                        {{req}}
+                        <br>
+                        {% endfor %}
+                    </p>
+                </div>
+                <div class="ui segment">
+                    <p>Request Body</p>
+                    <p style="word-break:break-word;" id="requestBody">
+                        {% for req_b in frame[0]['req_b'].decode('utf8',errors='ignore').split('<br>')%}
+                            {{req_b}}
+                            <br>
+                        {% endfor %}
+                    </p>
+
+                </div>
+                <div class="ui segment">
+                    <p>Response Header</p>
+                    <p id="responseHead">
+                        {% for req in frame[0]['res_h'].split('<br>')%}
+                            {{req}}
+                            <br>
+                        {% endfor %}
+                        </p>
+                    </div>
+                <div class="ui segment">
+                        <p>Response Body</p>
+                        <p style="word-break:break-word;" id="responseBody">
+                             {% for res_b in frame[0]['res_b'].decode('utf8',errors='ignore').split('<br>')%}
+                                {{res_b}}
+                                <br>
+                            {% endfor %}
+                        </p>
+                        <div class="ui small button" id="show_tree">Show Json Trees(json格式)</div>
+                        <div class="ui segment" style="display:none" id="bottom_div">
+                            <a class="ui orange ribbon label">Trees Details</a>
+                            <div id="pathtonode" style="display: none;"></div>
+                            <div id="toppathwrap" style="display: block;">
+                                <textarea id="accumpaths" style="display: none;"></textarea>
+                            </div>
+                            <ul id="browser" class="filetree treeview-famfamfam"></ul>
+                        </div>
+                    </div>
+            </div>
+            <br>
+            <div>
+                    <div class="ui black small right floated button" id="sendToService">
+                        <i class="send icon"></i>Send Details
+                    </div>
+                    <div class="ui black small right floated button" id="saveButton">
+                        <i class="download icon"></i>Save Details
+                    </div>
+                    <div class="ui buttons">
+                      <button class="ui labeled icon button blue" id="back"><i class="left chevron icon"></i> Back </button>
+                      <button class="ui right labeled icon button blue" id="forward">Forward <i class="right chevron icon"></i> </button>
+                    </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="ui five wide column">
+        <div class="ui segment" style="position: fixed;width:25%;height:80%; overflow:auto">
+            <a class="ui orange ribbon label"  style="bottom:10px;">Selected Details</a>
+            <table class="ui padded table">
+                <thead>
+                    <tr>
+                        <th>infoName</th>
+                        <th>infoValue</th>
+                    </tr>
+                </thead>
+                <tbody id="infoValue">
+                {% for _info in info %}
+                    <tr>
+                        <td>{{_info}}</td>
+                        <td>
+                            <div class="ui form input">
+                                <input id="{{_info}}" type="text">
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui striped table">
+              <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th width="30%">Type</th>
+                </tr>
+              </thead>
+              <tbody id="body">
+                {% for i in xx_interface%}
+                <tr>
+                    <td align="right">{{i}}</td>
+                    <td id="{{i}}" style="word-break:break-word;"></td>
+                </tr>
+                <tr>
+                    <td>
+                        <p align="right">RegEx:</p>
+                    </td>
+                    <td>
+                    <div class="ui fluid action input">
+                        <div title="hi">
+                            <input type="text">
+                        </div>
+                        <div class="hello" style="width:90%;float:right;display:none">
+                            <input type="text">
+                        </div>
+
+                    </div>
+                    </td>
+                    <td>
+                        <select  class="ui search">
+                            <option value="default">default</option>
+                            <option value="unlimited">unlimited</option>
+                            <option value="split">split</option>
+                            <option value="foreach">foreach</option>
+                            <option value="replace">replace</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="ui flowing popup bottom left transition" id="hide">
+        <div class="ui divided selection list">
+            {% set id=0 %}
+            {% for i in xx_interface%}
+                <a class="item" id="{{id}}">{{i}}</a>
+                {% set id=id+1 %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="ui flowing popup bottom left transition" id="hide2" style="position: fixed">
+        <div class="ui divided selection list" id="hide2_div">
+        </div>
+    </div>
+</div>
+</body>
+</html>
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.treeview.css') }}"/>
+
+    <script src="{{ url_for('static', filename='js/jquery.treeview.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jQueryRotateCompressed.2.1.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.jsontreeviewer.js') }}"></script>
+<script>
+    $(document).ready(function () {
+    var str="";
+    var now_resh="";
+    var now_reqh="";
+    var interface = new Array();
+    {% for f in xx_interface %}
+    interface.push("{{f}}");
+    {% endfor %}
+    var frame = {{frame|safe}};
+    var res_b=new Array();
+    {% for f in frame%}
+        res_b.push("{{f['res_b'].decode('utf8',errors='ignore') }}");
+    {% endfor %}
+    var req_b=new Array();
+    {% for f in frame%}
+        req_b.push("{{f['req_b'].decode('utf8',errors='ignore') }}");
+    {% endfor %}
+    var size=frame.length;
+    var i=0;
+<!--功能函数-->
+    function getSelect()
+    {
+        if(window.getSelection)
+        {
+            var t=window.getSelection();
+            return t;
+        }
+        else
+        {
+            var t=document.selection.createRange().text;
+            return t;
+        }
+    }
+    function getSplit(text){
+        var array=text.split('&lt;br&gt;');
+        var str1="";
+        for(var j=0;j<array.length;j++)
+        {
+            str1+=array[j]+"<br>"
+        }
+        return str1;
+    }
+    function clickToText(){
+        var path = $('#pathtonode').html();
+        var pathdelim = '~';
+        path = path.replace(/ &gt; /g, pathdelim);
+        return path;
+    }
+
+<!--功能函数结束    -->
+    $(document).on("contextmenu","#segment_one div p",function(e){
+        if(typeof e.preventDefault === "function"){
+                e.preventDefault();
+                e.stopPropagation();
+        }else{
+                e.returnValue = false;
+                e.cancelBubble = true;
+            }
+        if (getSelect() != "") {
+            var s_id=$(this).attr("id");
+            var s = "" + getSelect();
+            $("#hide").removeClass('hidden');
+            $("#hide").css({"left": document.body.scrollLeft+e.clientX - 140, "top": document.body.scrollTop+e.clientY - 70}).fadeIn();
+            $("#hide").css({"width": 200}).fadeIn();
+            $('#hide a').on("click", function () {
+                var id = parseInt($(this).attr('id'));
+                $("#" + interface[id]).text(s);
+                $("#" + interface[id]).attr('name',s_id);
+                $("#hide").addClass('hidden');
+            });
+        }
+        });
+        $('#segment_one div').on("click", function (e) {
+            if (!$('#hide').is('.hidden')) {
+                $("#hide").addClass('hidden');
+            }
+        });
+        $('#back').on("click", function () {
+            if (i - 1 >= 0) {
+                if(hasSave()==true){
+                    i = i - 1;
+                    $('#requestHead').html(frame[i]['req_h']);
+                    $('#requestBody').html(getSplit(req_b[i]));
+                    $('#responseHead').html(frame[i]['res_h']);
+                    $('#responseBody').html(getSplit(res_b[i]));
+                    JSONTREEVIEWER.processJSONTree($('#responseBody').text());
+                    str="";
+                    str+=frame[i]['req_h'];
+                    now_reqh=frame[i]['req_h'];
+                    str+=$('#requestBody').html();
+                    str+=frame[i]['res_h'];
+                    now_resh=frame[i]['res_h'];
+                    str+=$('#responseBody').html();
+                    isFinish();
+                }else{
+                    alert("please Save Details first!")
+                    $("#saveButton").css("background","red");
+                }
+            } else {
+                alert("This is the first!");
+            }
+        });
+
+        $('#forward').on("click", function () {
+            if (i + 1 < size) {
+                if(hasSave()==true){
+                    i = i + 1;
+                    $('#requestHead').html(getSplit(frame[i]['req_h']));
+                    $('#requestBody').html(getSplit(req_b[i]));
+                    $('#responseHead').html(getSplit(frame[i]['res_h']));
+                    $('#responseBody').html(getSplit(res_b[i]));
+                    JSONTREEVIEWER.processJSONTree($('#responseBody').text());
+                    str="";
+                    str+=frame[i]['req_h'];
+                    now_reqh=frame[i]['req_h'];
+                    str+=$('#requestBody').html();
+                    str+=frame[i]['res_h'];
+                    now_resh=frame[i]['res_h'];
+                    str+=$('#responseBody').html();
+                    isFinish();
+                }else{
+                    alert("please Save Details first!")
+                    $("#saveButton").css("background","red");
+                }
+            } else {
+                alert("This is the last!");
+            }
+        });
+
+
+        JSONTREEVIEWER.init();
+        JSONTREEVIEWER.processJSONTree($('#responseBody').text());
+
+    $(document).on("contextmenu",".file",function(e){
+        if(typeof e.preventDefault === "function"){
+                e.preventDefault();
+                e.stopPropagation();
+        }else{
+                e.returnValue = false;
+                e.cancelBubble = true;
+            }
+        var path = $('#pathtonode').html();
+        var pathdelim = '~';
+        path = path.replace(/ &gt; /g, pathdelim);
+        if (path!="") {
+            var b_id=$(this).parents('.filetree').attr('id');
+            if(b_id=="browser")
+                b_id="responseBody";
+            $("#hide").removeClass('hidden');
+            $("#hide").css({"left": document.body.scrollLeft+e.clientX-140, "top": document.body.scrollTop+e.clientY-70}).fadeIn();
+            $("#hide").css({"width": 200}).fadeIn();
+            $('#hide a').on("click", function () {
+                var id = parseInt($(this).attr('id'));
+                $("#" + interface[id]).text(path);
+                $("#" + interface[id]).attr('name',b_id);
+                $("#hide").addClass('hidden');
+            });
+        }
+    });
+    $('#bottom_div').on("click", function (e) {
+        if (!$('#hide').is('.hidden')) {
+            $("#hide").addClass('hidden');
+        }
+    });
+
+    $('#show_tree').on("click",function (e) {
+        $('#bottom_div').css("display","block");
+    });
+<!--实现正则表达式匹配-->
+    str+=frame[0]['req_h'];
+    now_reqh=frame[0]['req_h'];
+    str+=$('#requestBody').html();
+    str+=frame[0]['res_h'];
+    now_resh=frame[0]['res_h'];
+    str+=$('#responseBody').html();
+    $('#body input').focus(function() {
+        if (!$('#hide2').is('.hidden')) {
+            $("#hide2").addClass('hidden');
+        }
+	});
+	$('#body div[title=hi] input').blur(function() {
+	    var val=$(this).val();
+	    if(val!="")
+	    {
+            var result=[];
+            var patt=new RegExp($(this).val(),"g");
+            var setTime=0;
+            do{
+                var re=patt.exec(str);
+                result.push(re);
+                setTime+=1;
+            }while(re!=null&&setTime<20)
+            var html="";
+            for(var i=0;i<result.length-1;i++)
+            {
+                html+="<a class='item'>"+result[i]+"</a>";
+            }
+            $("#hide2_div").html(html);
+            $("#hide2").removeClass('hidden');
+            $("#hide2").css({"left": $(this).offset().left, "top": $(this).offset().top-document.body.scrollTop+35}).fadeIn();
+            $("#hide2").css({"width": 200}).fadeIn();
+            $('#hide2 a:odd').css('background-color','#FFFAFA');
+            if(result.length==2){
+                var td=$(this).parents('tr').prev().find("td").next();
+                if(patt.test($('#responseBody').html())==true)
+                    td.attr('name','responseBody');
+                else if(patt.test($('#requestBody').html())==true)
+                    td.attr('name','requestBody');
+                else if(patt.test(now_reqh)==true)
+                    td.attr('name','requestHead');
+                else if(patt.test(now_resh)==true)
+                    td.attr('name','responseHead');
+                td.text(result[0]);
+            }
+        }
+         $("#hide2").on("click",function(){
+	        if (!$('#hide2').is('.hidden')) {
+            $("#hide2").addClass('hidden');
+            }
+	    });
+	});
+
+<!--正则表达式结束-->
+<!--清空details-->
+    function clearDetails(){
+        var tr=$("#infoValue tr");
+        {% for _info in info %}
+            tr.find("input").val("");
+            tr=tr.next();
+        {% endfor %}
+        <!--tr=$("#body tr");-->
+        {% for i in xx_interface%}
+            <!--tr.find("#{{i}}").html("");-->
+            <!--tr=tr.next();-->
+            <!--tr.find("input").val("");-->
+            <!--tr=tr.next();-->
+            $("#{{i}}").html("");
+            $('#{{i}}').parent().next().find("td div input").val("");
+        {% endfor %}
+    }
+<!--选择type-->
+    $("#body select").change(function(){
+        text=$(this).find("option:selected").text();
+        if(text=="replace"){
+            $(this).parent().parent().find("td div.hello").show();
+        }else{
+            $(this).parent().parent().find("td div.hello").hide();
+        }
+    });
+<!--判断是否忘记保存-->
+    function hasSave(){
+        var isSave=true;
+        {% for i in xx_interface%}
+            if($("#{{i}}").html()!="" ||$('#{{i}}').parent().next().find("td div input").val()!="")
+                isSave=false;
+        {% endfor %}
+        return isSave;
+    }
+<!--实现判断本页是否已经完成-->
+    $("#check").css("display","none");
+    var finish=[];
+    for(var j=0;j<size;j++)
+    {
+        finish[j]=0;
+    }
+    function isFinish(){
+        if(finish[i]==1){
+            $("#check").removeAttr("style");
+        }else{
+            $("#check").css("display","none");
+        }
+    }
+<!--实现saveData功能-->
+    var data=[];
+    $("#saveButton").on("click",function(e){
+        $("#saveButton").css("background","black");
+        var sendData={};
+        <!--sendData.infoDef=[-->
+            <!--{-->
+                <!--"name": "sourcefrom",-->
+                <!--"value": "58同程"-->
+            <!--},-->
+            <!--{-->
+                <!--"name": "coordtype",-->
+                <!--"value": "GPS"-->
+            <!--}-->
+        <!--];-->
+        var infoDef=[];
+        {% for _info in info %}
+            var info_detail={};
+            info_detail['name']="{{_info}}";
+            var value=$('#{{_info}}').val();
+            info_detail['value']=value;
+            infoDef.push(info_detail);
+        {% endfor %}
+        sendData.infoDef=infoDef;
+        var requestHead=[];
+        var requestBody=[];
+        var responseHead=[];
+        var responseBody=[];
+        var info={};
+        info.requestHead=requestHead;
+        info.requestBody=requestBody;
+        info.responseHead=responseHead;
+        info.responseBody=responseBody;
+        {% for i in xx_interface%}
+            if($('#{{i}}').text()!="")
+            {
+                var i_detail={};
+                i_detail['infoname']="{{i}}";
+                i_detail['value']=$('#{{i}}').text();
+                var regexType=$('#{{i}}').parent().next().find("td select").find("option:selected").text();
+                i_detail['regexType']=regexType;
+                var regEx=$('#{{i}}').parent().next().find("td div input").val();
+                if(regexType=="replace")
+                    regEx+="~"+$('#{{i}}').parent().next().find("td div.hello input").val()
+                i_detail['regex']=regEx;
+                var name=$('#{{i}}').attr('name');
+                info[name].push(i_detail);
+            }
+        {% endfor %}
+        for(var key in info)
+        {
+            if(info[key].length==0)
+                delete info[key];
+        }
+        sendData.locations=info;
+        var patt=new RegExp("Host:([^<\r\n]*)");
+        var host=patt.exec(now_reqh)[1];
+        sendData.host=host;
+        var patt2=new RegExp("([^\r\n]*?) (.*?) HTTP/1.1");
+        var r =patt2.exec(now_reqh);
+        var method=r[1];
+        var url=r[2];
+        sendData.method=method;
+        sendData.url=url;
+        data.push(sendData);
+        finish[i]=1;
+        isFinish();
+        clearDetails();
+    });
+
+<!--实现传送sendData数据    -->
+    $('#sendToService').on("click",function(e){
+        console.log(data);
+        $.ajax({
+            type: 'POST',
+            async: true,
+            contentType: 'application/json; charset=utf-8',
+            url: '/autogen_2_filter',
+            data: $.toJSON(data),
+            success: function (response) {
+                if(response=="success")
+                {
+                    window.open("/autogen_2_filter");
+                }
+            }
+        });
+        data=[];
+    });
+<!--结束传送sendData数据-->
+});
+</script>
+{% endblock %}

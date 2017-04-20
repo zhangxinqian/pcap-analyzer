@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Cache-Control: max-age=86400
+Content-Length: 26
+Content-Type: text/plain
+Date: Fri, 08 May 2015 02:51:01 GMT
+Expires: Sat, 09 May 2015 02:51:01 GMT
+Http_x_bd_logid: 1001157098
+Http_x_bd_logid64: 5883167911097030757
+Server: apache
+
+{"ctr":"196619","ver":"0"}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<preprocessConfig version="2.00" build="LBS2015080401" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+{%- block temp -%}
+{%- set Sid_number = 20100 -%} {# define the site_number #}
+    <site id="{{ Sid_number }}" name="{{ data1['name'] }}" domain="{{ data2[0]['host']}}" type="{{ data1['type']}}">
+        {%- set Fid_number = Sid_number+ 1 -%} {# define the filter_number #}
+            {% for filter_item in data2 %}  {# to handle for each url #}
+            <filter id="{{ Fid_number }}" method="{{ filter_item['method'] }}" url="{{ filter_item['url'] }}" host="{{ filter_item['host'] }}" time="{{ filter_item['time']}}" >
+                <infoExtraction>
+                {%- set info_flag = 1 -%} {# Sourcefrom and CoordType print only once for all the four locations #}
+                {% for locat_key, locat_val in filter_item['locations'].items() %} {# to handle for each Location (requestHead/requestBody/responseHead/responseBody) #}
+                    <extrationSection location="{{ locat_key }}">
+                        {%- if info_flag %}
+                        <infoDef infoName="SourceFrom" infoValue="{{ filter_item['info'][0]['value'] }}" decode="URL_UTF8"/>
+                        <infoDef infoName="CoordType" infoValue="{{ filter_item['info'][1]['value'] }}" />
+                        {%- set info_flag = 0 -%}
+                        {%- endif -%}
+
+                        {#对infoname为空的元组进行递归使用for循环（加上recursive修饰、loop）,else否则进行赋值#}
+                         {% for pat_item in locat_val recursive %}  {# 对每一个infoname为空的处理 #}  {# regex要嵌套 #}
+                            {%- if pat_item['infoname'] == None %}
+                                <regex pattern="{{ pat_item['pattern'] }}"> {# 这个regex与endfor pat_item前的</regex>配对 #}
+                                {{ loop( pat_item['regex']) }}
+                                </regex>{# 与每一个infoname为空的regex相对应 #}
+                            {%- else %} {# 对infoname不为空的进行赋值 #}
+                                <regex pattern="{{ pat_item['pattern'] }}" infoName="{{ pat_item['infoname'] }}"/>
+                            {%- endif %}
+                         {% endfor %}
+                    </extrationSection>
+                {% else %}
+                    {{ "Something Error! " }}
+                    {% print 'Errors occur in the content of location'+ '\n' %}
+                {% endfor %}
+                </infoExtraction>
+
+                <output>
+                    <file outputType="LBS_INFO_CURRENT_POSTION" msgType="LBS_CURRENT_POSITION"/>
+                </output>
+            </filter>
+            {%- set Fid_number = Fid_number+ 1 -%}
+            {% endfor %}
+        {#{% else %}
+            {% print 'Errors occur in the content of URL iteration'+ '\n' %}
+        {% endfor %} #}
+    </site>
+{% endblock temp -%}
+</preprocessConfig>

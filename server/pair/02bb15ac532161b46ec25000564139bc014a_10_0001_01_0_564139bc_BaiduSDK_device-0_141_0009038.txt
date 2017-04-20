@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Cache-Control: max-age=86400
+Content-Length: 284
+Content-Type: text/plain
+Date: Fri, 08 May 2015 02:51:01 GMT
+Expires: Sat, 09 May 2015 02:51:01 GMT
+Http_x_bd_logid: 786649265
+Http_x_bd_logid64: 16558996061297821993
+Server: apache
+
+{"content":{"addr":"上海市,上海市,普陀区,共青路,,289,中国,0","bldg":"","clf":"121.403753|31.227739|2000.000000","floor":"","indoor":"40","point":{"x":"121.403368","y":"31.228084"},"radius":"67.625394","ssid":"2047"},"result":{"error":"161","time":"2015-05-08 10:51:01"}}
